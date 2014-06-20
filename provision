@@ -1,0 +1,83 @@
+# This script is instance_evaluated inside a
+# Sprinkle::Script instance.
+# See: https://github.com/sprinkle-tool/sprinkle/blob/master/lib/sprinkle/script.rb
+
+# We should never use global vars. Fuck the rules in this case, we are
+# doing ruby ;-)
+$sprinkle_script = self
+
+require 'byebug'
+require 'active_support/all'
+require 'colorize'
+require 'thor'
+
+class ProvisionCommand < Thor
+  include Thor::Actions
+
+  desc "recipes", "provision a server with recipes"
+  method_option :recipes, :type => :array, :default => ["basic"],
+  :required => false,
+  :aliases => '-r'
+  method_option :host, :type => :string, :required => true, :aliases => '-h'
+  method_option :deploy_user, :type => :string, :required => true, :aliases => '-u'
+
+  def recipes
+    are_valid_recipes?(options[:recipes])
+
+    # force into local scope and set deploy_user
+    deploy_user = ENV["DEPLOY_USER"] = options[:deploy_user]
+    deploy_host = options[:host]
+
+    require relative_path('packages', 'helper')
+    options[:recipes].each do |recipe|
+      begin
+        require relative_path('recipes', recipe)
+      rescue ConfigurationError => e
+        puts "ConfigurationError: [recipe:#{recipe}] #{e.message}".red
+        exit(1)
+      end
+    end
+
+    $sprinkle_script.deployment do
+      delivery :ssh do
+        user  deploy_user
+        roles :recipes_target => deploy_host
+      end
+    end
+
+  end
+
+  private
+
+  def are_valid_recipes?(recipes)
+    invalid_recipes = recipes - valid_recipes
+    unless invalid_recipes.empty?
+      $stderr.puts "Invalid recipes found: #{invalid_recipes.join(', ')}.".red
+      $stderr.puts "Valid recipes are: #{valid_recipes.join(', ')}." if valid_recipes.present?
+      exit(1)
+    end
+  end
+
+  def recipes_dir
+    relative_path('recipes')
+  end
+
+  def valid_recipes
+    Dir.glob(relative_path('recipes', '*.rb')).collect { |e| File.basename(e, '.rb') }
+  end
+
+  # our base to work from
+  def relative_path *path
+    path.inject(source_root) { |s,p| File.join(s,p) }
+  end
+  def source_root
+    File.dirname(__FILE__)
+  end
+  def self.source_root
+    File.dirname(__FILE__)
+  end
+
+
+end
+
+ProvisionCommand.start

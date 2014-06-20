@@ -1,0 +1,29 @@
+Recipe based sprinkler configurations.
+
+* Instructions
+
+Setup environment first with the usal bundlers stuff.
+
+#+BEGIN_SRC sh
+bundle install
+#+END_SRC
+
+Now the command sprinkle should be available.
+
+** Command
+
+*** Provioning of recipes
+Mind the =--= to specify parameters for the =setup= script.
+
+#+BEGIN_SRC sh
+bundle exec sprinkle -v -c -s provision -- recipes -h target_host -r recipe1 recipe2 recipe3
+#+END_SRC
+
+* Recipes
+
+Recipes are just a set of related packages. Selecting recipes for different
+machines is more conventient than selecting all packages one by one.
+
+Some recipes need environment variables. There will be checked when
+==requiring== the recipe. When an enviroment variable is missing, the
+provisioning process will be halted before it has begon.
