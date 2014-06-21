@@ -42,6 +42,44 @@ class ProvisionCommand < Thor
       delivery :ssh do
         user  deploy_user
         roles :recipes_target => deploy_host
+
+        source do
+          prefix    '/usr/local'
+          archives  '/usr/local/sources'
+          builds    '/usr/local/build'
+        end
+      end
+    end
+
+  end
+
+  desc "package", "provision a single package"
+  method_option :name, :type => :string, :required => true, :aliases => '-n'
+  method_option :host, :type => :string, :required => true, :aliases => '-h'
+  method_option :deploy_user, :type => :string, :required => true, :aliases => '-u'
+  def package
+    # force into local scope and set deploy_user
+    deploy_user = ENV["DEPLOY_USER"] = options[:deploy_user]
+    deploy_host = options[:host]
+    package_name = options[:name]
+
+    require relative_path('packages', 'helper')
+    require relative_path('packages', package_name)
+
+    $sprinkle_script.policy :basic, :roles => :recipes_target do
+      requires package_name
+    end
+
+    $sprinkle_script.deployment do
+      delivery :ssh do
+        user  :root
+        roles :recipes_target => deploy_host
+      end
+
+      source do
+        prefix    '/usr/local'
+        archives  '/usr/local/sources'
+        builds    '/usr/local/build'
       end
     end
 
