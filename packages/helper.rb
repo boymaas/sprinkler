@@ -1,5 +1,9 @@
 class ConfigurationError < RuntimeError; end
 
+def asset_path path
+  absolute_path = File.expand_path( File.join(File.dirname(__FILE__), '..', 'assets', path) )
+end
+
 def config(name, opts={})
   default  = opts.fetch(:default, nil)
   regexp   = opts.fetch(:regexp, nil)
