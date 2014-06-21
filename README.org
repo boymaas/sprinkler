@@ -27,3 +27,6 @@ machines is more conventient than selecting all packages one by one.
 Some recipes need environment variables. There will be checked when
 ==requiring== the recipe. When an enviroment variable is missing, the
 provisioning process will be halted before it has begon.
+
+* Notes
+- http://rdoc.info/github/sprinkle-tool/sprinkle/master/frames/Sprinkle
